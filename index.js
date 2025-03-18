@@ -184,6 +184,92 @@ app.post("/books", async (req, res) => {
   }
 });
 
+async function getAuthors() {
+  const authors = await Author.findAll();
+  return { authors: authors };
+}
+
+app.get("/authors", async (req, res) => {
+  try {
+    const response = await getAuthors();
+
+    if (response.authors.length === 0) {
+      return res.status(404).json({ message: `authors not found ` });
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching authors",
+      error: error.message,
+    });
+  }
+});
+
+async function addNewAuthor(name, birthdate, email) {
+  const newAuthor = await Author.create({
+    name,
+    birthdate,
+    email,
+  });
+
+  return { message: "Author created!!", newAuthor };
+}
+
+app.post("/author/new", async (req, res) => {
+  try {
+    const { name, birthdate, email } = req.body;
+
+    const response = await addNewAuthor(name, birthdate, email);
+
+    if (!response.message) {
+      return res.status(404).json({ message: `Author not found` });
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error adding author",
+      error: error.message,
+    });
+  }
+});
+
+async function getAuthorsByGenreIds(genresId) {
+  const booksByGenre = await Book.findAll({
+    include: Genre,
+    Book,
+    where: { id: genresId },
+  });
+
+  booksByGenre.map((author) => {});
+
+  const authors = await Book.findAll({
+    include: Author,
+    where: { genresId },
+  });
+
+  return { books: booksByGenre };
+}
+
+app.get("/genres/:genresId/authors", async (req, res) => {
+  try {
+    const genresId = req.params.genresId;
+    const response = await getAuthorsByGenreIds(genresId);
+
+    if (response.books.length === 0) {
+      return res.status(404).json({ message: `Books not found` });
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error getting author by genre Id",
+      error: error.message,
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running at port ${PORT}`);
 });
